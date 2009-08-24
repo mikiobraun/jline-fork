@@ -96,6 +96,7 @@ public abstract class Terminal implements ConsoleOperations {
      *  the console.
      */
     public int readCharacter(final InputStream in) throws IOException {
+
         return in.read();
     }
 

@@ -40,60 +40,61 @@ public class ConsoleReader implements ConsoleOperations {
     static {
         Map names = new TreeMap();
 
-        names.put("MOVE_TO_BEG", new Short(MOVE_TO_BEG));
-        names.put("MOVE_TO_END", new Short(MOVE_TO_END));
-        names.put("PREV_CHAR", new Short(PREV_CHAR));
-        names.put("NEWLINE", new Short(NEWLINE));
-        names.put("KILL_LINE", new Short(KILL_LINE));
-        names.put("PASTE", new Short(PASTE));
-        names.put("CLEAR_SCREEN", new Short(CLEAR_SCREEN));
-        names.put("NEXT_HISTORY", new Short(NEXT_HISTORY));
-        names.put("PREV_HISTORY", new Short(PREV_HISTORY));
-        names.put("START_OF_HISTORY", new Short(START_OF_HISTORY));
-        names.put("END_OF_HISTORY", new Short(END_OF_HISTORY));
-        names.put("REDISPLAY", new Short(REDISPLAY));
-        names.put("KILL_LINE_PREV", new Short(KILL_LINE_PREV));
-        names.put("DELETE_PREV_WORD", new Short(DELETE_PREV_WORD));
-        names.put("NEXT_CHAR", new Short(NEXT_CHAR));
-        names.put("REPEAT_PREV_CHAR", new Short(REPEAT_PREV_CHAR));
-        names.put("SEARCH_PREV", new Short(SEARCH_PREV));
-        names.put("REPEAT_NEXT_CHAR", new Short(REPEAT_NEXT_CHAR));
-        names.put("SEARCH_NEXT", new Short(SEARCH_NEXT));
-        names.put("PREV_SPACE_WORD", new Short(PREV_SPACE_WORD));
-        names.put("TO_END_WORD", new Short(TO_END_WORD));
-        names.put("REPEAT_SEARCH_PREV", new Short(REPEAT_SEARCH_PREV));
-        names.put("PASTE_PREV", new Short(PASTE_PREV));
-        names.put("REPLACE_MODE", new Short(REPLACE_MODE));
-        names.put("SUBSTITUTE_LINE", new Short(SUBSTITUTE_LINE));
-        names.put("TO_PREV_CHAR", new Short(TO_PREV_CHAR));
-        names.put("NEXT_SPACE_WORD", new Short(NEXT_SPACE_WORD));
-        names.put("DELETE_PREV_CHAR", new Short(DELETE_PREV_CHAR));
-        names.put("ADD", new Short(ADD));
-        names.put("PREV_WORD", new Short(PREV_WORD));
-        names.put("CHANGE_META", new Short(CHANGE_META));
-        names.put("DELETE_META", new Short(DELETE_META));
-        names.put("END_WORD", new Short(END_WORD));
-        names.put("NEXT_CHAR", new Short(NEXT_CHAR));
-        names.put("INSERT", new Short(INSERT));
-        names.put("REPEAT_SEARCH_NEXT", new Short(REPEAT_SEARCH_NEXT));
-        names.put("PASTE_NEXT", new Short(PASTE_NEXT));
-        names.put("REPLACE_CHAR", new Short(REPLACE_CHAR));
-        names.put("SUBSTITUTE_CHAR", new Short(SUBSTITUTE_CHAR));
-        names.put("TO_NEXT_CHAR", new Short(TO_NEXT_CHAR));
-        names.put("UNDO", new Short(UNDO));
-        names.put("NEXT_WORD", new Short(NEXT_WORD));
-        names.put("DELETE_NEXT_CHAR", new Short(DELETE_NEXT_CHAR));
-        names.put("CHANGE_CASE", new Short(CHANGE_CASE));
-        names.put("COMPLETE", new Short(COMPLETE));
-        names.put("EXIT", new Short(EXIT));
-        names.put("CLEAR_LINE", new Short(CLEAR_LINE));
+        names.put("MOVE_TO_BEG", new Integer(MOVE_TO_BEG));
+        names.put("MOVE_TO_END", new Integer(MOVE_TO_END));
+        names.put("PREV_CHAR", new Integer(PREV_CHAR));
+        names.put("NEWLINE", new Integer(NEWLINE));
+        names.put("KILL_LINE", new Integer(KILL_LINE));
+        names.put("PASTE", new Integer(PASTE));
+        names.put("CLEAR_SCREEN", new Integer(CLEAR_SCREEN));
+        names.put("NEXT_HISTORY", new Integer(NEXT_HISTORY));
+        names.put("PREV_HISTORY", new Integer(PREV_HISTORY));
+        names.put("START_OF_HISTORY", new Integer(START_OF_HISTORY));
+        names.put("END_OF_HISTORY", new Integer(END_OF_HISTORY));
+        names.put("REDISPLAY", new Integer(REDISPLAY));
+        names.put("KILL_LINE_PREV", new Integer(KILL_LINE_PREV));
+        names.put("DELETE_PREV_WORD", new Integer(DELETE_PREV_WORD));
+        names.put("NEXT_CHAR", new Integer(NEXT_CHAR));
+        names.put("REPEAT_PREV_CHAR", new Integer(REPEAT_PREV_CHAR));
+        names.put("SEARCH_PREV", new Integer(SEARCH_PREV));
+        names.put("REPEAT_NEXT_CHAR", new Integer(REPEAT_NEXT_CHAR));
+        names.put("SEARCH_NEXT", new Integer(SEARCH_NEXT));
+        names.put("PREV_SPACE_WORD", new Integer(PREV_SPACE_WORD));
+        names.put("TO_END_WORD", new Integer(TO_END_WORD));
+        names.put("REPEAT_SEARCH_PREV", new Integer(REPEAT_SEARCH_PREV));
+        names.put("PASTE_PREV", new Integer(PASTE_PREV));
+        names.put("REPLACE_MODE", new Integer(REPLACE_MODE));
+        names.put("SUBSTITUTE_LINE", new Integer(SUBSTITUTE_LINE));
+        names.put("TO_PREV_CHAR", new Integer(TO_PREV_CHAR));
+        names.put("NEXT_SPACE_WORD", new Integer(NEXT_SPACE_WORD));
+        names.put("DELETE_PREV_CHAR", new Integer(DELETE_PREV_CHAR));
+        names.put("ADD", new Integer(ADD));
+        names.put("PREV_WORD", new Integer(PREV_WORD));
+        names.put("CHANGE_META", new Integer(CHANGE_META));
+        names.put("DELETE_META", new Integer(DELETE_META));
+        names.put("END_WORD", new Integer(END_WORD));
+        names.put("NEXT_CHAR", new Integer(NEXT_CHAR));
+        names.put("INSERT", new Integer(INSERT));
+        names.put("REPEAT_SEARCH_NEXT", new Integer(REPEAT_SEARCH_NEXT));
+        names.put("PASTE_NEXT", new Integer(PASTE_NEXT));
+        names.put("REPLACE_CHAR", new Integer(REPLACE_CHAR));
+        names.put("SUBSTITUTE_CHAR", new Integer(SUBSTITUTE_CHAR));
+        names.put("TO_NEXT_CHAR", new Integer(TO_NEXT_CHAR));
+        names.put("UNDO", new Integer(UNDO));
+        names.put("NEXT_WORD", new Integer(NEXT_WORD));
+        names.put("DELETE_NEXT_CHAR", new Integer(DELETE_NEXT_CHAR));
+        names.put("CHANGE_CASE", new Integer(CHANGE_CASE));
+        names.put("COMPLETE", new Integer(COMPLETE));
+        names.put("EXIT", new Integer(EXIT));
+        names.put("CLEAR_LINE", new Integer(CLEAR_LINE));
+        names.put("ABORT", new Integer(ABORT));
 
         KEYMAP_NAMES = new TreeMap(Collections.unmodifiableMap(names));
     }
     /**
      * The map for logical operations.
      */
-    private final short[] keybindings;
+    private final Keybindings keybindings;
     /**
      * If true, issue an audible keyboard bell when appropriate.
      */
@@ -208,12 +209,11 @@ public class ConsoleReader implements ConsoleOperations {
         }
 
         if (bindings == null) {
+            System.out.println("Getting default bindings");
             bindings = terminal.getDefaultBindings();
         }
 
-        this.keybindings = new short[Character.MAX_VALUE * 2];
-
-        Arrays.fill(this.keybindings, UNKNOWN);
+        this.keybindings = new Keybindings();
 
         /**
          * Loads the key bindings. Bindings file is in the format:
@@ -229,13 +229,18 @@ public class ConsoleReader implements ConsoleOperations {
                 String val = (String) i.next();
 
                 try {
-                    Short code = new Short(val);
+                    int code = Keybindings.parseKey(val);
                     String op = (String) p.getProperty(val);
 
-                    Short opval = (Short) KEYMAP_NAMES.get(op);
+                    Integer opval = (Integer) KEYMAP_NAMES.get(op);
 
-                    if (opval != null) {
-                        keybindings[code.shortValue()] = opval.shortValue();
+                    System.out.println("Mapping " + val + " (code: " + code + ") to " + op + " (code: " + opval + ")");
+
+                    if (code != -1 && opval != null) {
+                        keybindings.bindKey(code, opval.intValue());
+                    }
+                    else {
+                        System.out.println("Warning: unknown opval '" + op + "' in bindings definition.");
                     }
                 } catch (NumberFormatException nfe) {
                     consumeException(nfe);
@@ -343,13 +348,7 @@ public class ConsoleReader implements ConsoleOperations {
     }
 
     int getKeyForAction(short logicalAction) {
-        for (int i = 0; i < keybindings.length; i++) {
-            if (keybindings[i] == logicalAction) {
-                return i;
-            }
-        }
-
-        return -1;
+        return keybindings.getKeyForAction(logicalAction);
     }
 
     /**
@@ -520,8 +519,10 @@ public class ConsoleReader implements ConsoleOperations {
                             break;
                             
                         case DELETE_PREV_CHAR:
-                            searchTerm.deleteCharAt(searchTerm.length() - 1);
-                            searchIndex = history.searchBackwards(searchTerm.toString());
+                            if (searchTerm.length() > 0) {
+                                searchTerm.deleteCharAt(searchTerm.length() - 1);
+                                searchIndex = history.searchBackwards(searchTerm.toString());
+                            }
                             break;
                             
                         case UNKNOWN:
@@ -728,7 +729,7 @@ public class ConsoleReader implements ConsoleOperations {
         }
 
         // extract the appropriate key binding
-        short code = keybindings[c];
+        int code = keybindings.resolveKey(c);
 
         if (debugger != null) {
             debug("    translated: " + (int) c + ": " + code);

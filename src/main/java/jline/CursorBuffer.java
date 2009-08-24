@@ -13,7 +13,7 @@ package jline;
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  */
 public class CursorBuffer {
-    public int cursor = 0;
+    int cursor = 0;
 
     StringBuffer buffer = new StringBuffer();
 
