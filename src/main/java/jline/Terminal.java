@@ -178,4 +178,6 @@ public abstract class Terminal implements ConsoleOperations {
     public InputStream getDefaultBindings() {
         return Terminal.class.getResourceAsStream("keybindings.properties");
     }
+
+    public abstract String getKeyForVirtualKey(int virtualKey);
 }

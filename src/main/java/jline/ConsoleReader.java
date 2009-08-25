@@ -31,11 +31,15 @@ public class ConsoleReader implements ConsoleOperations {
     private boolean usePagination = false;
     public static final String CR = System.getProperty("line.separator");
     private static ResourceBundle loc = ResourceBundle.getBundle(CandidateListCompletionHandler.class.getName());
+    // The edit states
+    private final int NORMAL = 1;
+    private final int SEARCH = 2;
+    private final int RETURN_BUFFER = 3;
+    private final int RETURN_NULL = 4;
     /**
      * Map that contains the operation name to keymay operation mapping.
      */
     public static SortedMap KEYMAP_NAMES;
-
 
     static {
         Map names = new TreeMap();
@@ -113,7 +117,6 @@ public class ConsoleReader implements ConsoleOperations {
      */
     private int autoprintThreshhold = Integer.getInteger(
             "jline.completion.threshold", 100).intValue(); // same default as
-
     // bash
     /**
      * The Terminal to use.
@@ -128,7 +131,6 @@ public class ConsoleReader implements ConsoleOperations {
     final List completors = new LinkedList();
     private Character echoCharacter = null;
     private Map triggeredActions = new HashMap();
-
     private StringBuffer searchTerm = null;
     private String previousSearchTerm = "";
     private int searchIndex = -1;
@@ -238,20 +240,13 @@ public class ConsoleReader implements ConsoleOperations {
 
                     if (code != -1 && opval != null) {
                         keybindings.bindKey(code, opval.intValue());
-                    }
-                    else {
+                    } else {
                         System.out.println("Warning: unknown opval '" + op + "' in bindings definition.");
                     }
                 } catch (NumberFormatException nfe) {
                     consumeException(nfe);
                 }
             }
-
-        // hardwired arrow key bindings
-        // keybindings[VK_UP] = PREV_HISTORY;
-        // keybindings[VK_DOWN] = NEXT_HISTORY;
-        // keybindings[VK_LEFT] = PREV_CHAR;
-        // keybindings[VK_RIGHT] = NEXT_CHAR;
         }
     }
 
@@ -347,8 +342,18 @@ public class ConsoleReader implements ConsoleOperations {
         return this.autoprintThreshhold;
     }
 
-    int getKeyForAction(short logicalAction) {
+    /** Look up the virtual key code for an action. */
+    int getVirtualKeyForAction(short logicalAction) {
         return keybindings.getKeyForAction(logicalAction);
+    }
+
+    /**
+     * Look up the key sequence for a virtual key.
+     *
+     * Naturally, this depends on the used terminal and operating system.
+     */
+    String getKeyForVirtualKey(int virtualKey) {
+        return terminal.getKeyForVirtualKey(virtualKey);
     }
 
     /**
@@ -442,6 +447,7 @@ public class ConsoleReader implements ConsoleOperations {
     public String getDefaultPrompt() {
         return prompt;
     }
+    private int state;
 
     /**
      * Read a line from the <i>in</i> {@link InputStream}, and return the line
@@ -470,234 +476,243 @@ public class ConsoleReader implements ConsoleOperations {
             // if the terminal is unsupported, just use plain-java reading
             if (!terminal.isSupported()) {
                 return readLine(in);
-            }
+            } else {
+                state = NORMAL;
 
-            final int NORMAL = 1;
-            final int SEARCH = 2;
-            int state = NORMAL;
+                while (state != RETURN_NULL && state != RETURN_BUFFER) {
+                    // Read next key and look up the command binding.
+                    int c = readVirtualKey();
 
-            boolean success = true;
-
-            while (true) {
-                // Read next key and look up the command binding.
-                int[] next = readBinding();
-
-                if (next == null) {
-                    return null;
-                }
-
-                int c = next[0];
-                int code = next[1];
-
-                if (c == -1) {
-                    return null;
-                }
-
-                // Search mode.
-                //
-                // Note that we have to do this first, because if there is a command
-                // not linked to a search command, we leave the search mode and fall
-                // through to the normal state.
-                if (state == SEARCH) {
-                    switch (code) {
-                        // This doesn't work right now, it seems CTRL-G is not passed
-                        // down correctly. :(
-                        case ABORT:
-                            state = NORMAL;
-                            break;
-
-                        case SEARCH_PREV:
-                            if (searchTerm.length() == 0) {
-                                searchTerm.append(previousSearchTerm);
-                            }
-
-                            if (searchIndex == -1) {
-                                searchIndex = history.searchBackwards(searchTerm.toString());
-                            } else {
-                                searchIndex = history.searchBackwards(searchTerm.toString(), searchIndex);
-                            }
-                            break;
-                            
-                        case DELETE_PREV_CHAR:
-                            if (searchTerm.length() > 0) {
-                                searchTerm.deleteCharAt(searchTerm.length() - 1);
-                                searchIndex = history.searchBackwards(searchTerm.toString());
-                            }
-                            break;
-                            
-                        case UNKNOWN:
-                            searchTerm.appendCodePoint(c);
-                            searchIndex = history.searchBackwards(searchTerm.toString());
-                            break;
-
-                        default:
-                            // Set buffer and cursor position to the found string.
-                            if (searchIndex != -1) {
-                                history.setCurrentIndex(searchIndex);
-                                setBuffer(history.current());
-                                buf.cursor = history.current().indexOf(searchTerm.toString());
-                            }
-                            state = NORMAL;
-                            break;
+                    if (c == -1) { // EOF
+                        return null;
                     }
 
-                    // if we're still in search mode, print the search status
+                    int code = readBinding(c);
+
+                    // First, check for search mode.
                     if (state == SEARCH) {
-                        if (searchTerm.length() == 0) {
-                            printSearchStatus("", "");
-                        } else {
-                            if (searchIndex == -1) {
-                                beep();
-                            } else {
-                                printSearchStatus(searchTerm.toString(), history.getHistory(searchIndex));
-                            }
-                        }
+                        processKeySearchMode(code, c);
                     }
-                    // otherwise, restore the line
-                    else {
-                        restoreLine();
+
+                    // Search mode might set the state to NORMAL, then we
+                    // have to reprocess the character.
+                    if (state == NORMAL) {
+                        processKeyNormalMode(code, c);
                     }
                 }
 
-                if (state == NORMAL) {
-                    switch (code) {
-                        case EXIT: // ctrl-d
-
-                            if (buf.buffer.length() == 0) {
-                                return null;
-                            }
-                            else {
-                                success = deleteCurrentCharacter();
-                            }
-                            break;
-
-                        case COMPLETE: // tab
-                            success = complete();
-                            break;
-
-                        case MOVE_TO_BEG:
-                            success = setCursorPosition(0);
-                            break;
-
-                        case KILL_LINE: // CTRL-K
-                            success = killLine();
-                            break;
-
-                        case CLEAR_SCREEN: // CTRL-L
-                            success = clearScreen();
-                            break;
-
-                        case KILL_LINE_PREV: // CTRL-U
-                            success = resetLine();
-                            break;
-
-                        case NEWLINE: // enter
-                            moveToEnd();
-                            printNewline(); // output newline
-                            return finishBuffer();
-
-                        case DELETE_PREV_CHAR: // backspace
-                            success = backspace();
-                            break;
-
-                        case DELETE_NEXT_CHAR: // delete
-                            success = deleteCurrentCharacter();
-                            break;
-
-                        case MOVE_TO_END:
-                            success = moveToEnd();
-                            break;
-
-                        case PREV_CHAR:
-                            success = moveCursor(-1) != 0;
-                            break;
-
-                        case NEXT_CHAR:
-                            success = moveCursor(1) != 0;
-                            break;
-
-                        case NEXT_HISTORY:
-                            success = moveHistory(true);
-                            break;
-
-                        case PREV_HISTORY:
-                            success = moveHistory(false);
-                            break;
-
-                        case REDISPLAY:
-                            break;
-
-                        case PASTE:
-                            success = paste();
-                            break;
-
-                        case DELETE_PREV_WORD:
-                            success = deletePreviousWord();
-                            break;
-
-                        case PREV_WORD:
-                            success = previousWord();
-                            break;
-
-                        case NEXT_WORD:
-                            success = nextWord();
-                            break;
-
-                        case START_OF_HISTORY:
-                            success = history.moveToFirstEntry();
-                            if (success) {
-                                setBuffer(history.current());
-                            }
-                            break;
-
-                        case END_OF_HISTORY:
-                            success = history.moveToLastEntry();
-                            if (success) {
-                                setBuffer(history.current());
-                            }
-                            break;
-
-                        case CLEAR_LINE:
-                            moveInternal(-(buf.buffer.length()));
-                            killLine();
-                            break;
-
-                        case INSERT:
-                            buf.setOvertyping(!buf.isOvertyping());
-                            break;
-
-                        case SEARCH_PREV: // CTRL-R
-                            if (searchTerm != null) {
-                                previousSearchTerm = searchTerm.toString();
-                            }
-                            searchTerm = new StringBuffer();
-                            state = SEARCH;
-                            printSearchStatus("", "");
-                            break;
-
-                        case UNKNOWN:
-                        default:
-                            if (c != 0) { // ignore null chars
-                                ActionListener action = (ActionListener) triggeredActions.get(new Character((char) c));
-                                if (action != null) {
-                                    action.actionPerformed(null);
-                                } else {
-                                    putChar(c, true);
-                                }
-                            } else {
-                                success = false;
-                            }
-                    }
-
-                    if (!(success)) {
-                        beep();
-                    }
-
-                    flushConsole();
+                // Check for possible exit options
+                if (state == RETURN_NULL) {
+                    return null;
+                } else if (state == RETURN_BUFFER) {
+                    return finishBuffer();
+                } else {
+                    throw new RuntimeException("Readline ended up in unknown state.");
                 }
             }
         } finally {
             terminal.afterReadLine(this, this.prompt, mask);
+        }
+    }
+
+    /** Process a key in normal mode. */
+    private void processKeyNormalMode(int code, int c) throws IOException {
+        boolean success = true;
+        switch (code) {
+            case EXIT: // ctrl-d
+
+                if (buf.buffer.length() == 0) {
+                    state = RETURN_NULL;
+                    return;
+                } else {
+                    success = deleteCurrentCharacter();
+                }
+                break;
+
+            case COMPLETE: // tab
+                success = complete();
+                break;
+
+            case MOVE_TO_BEG:
+                success = setCursorPosition(0);
+                break;
+
+            case KILL_LINE: // CTRL-K
+                success = killLine();
+                break;
+
+            case CLEAR_SCREEN: // CTRL-L
+                success = clearScreen();
+                break;
+
+            case KILL_LINE_PREV: // CTRL-U
+                success = resetLine();
+                break;
+
+            case NEWLINE: // enter
+                moveToEnd();
+                printNewline(); // output newline
+                state = RETURN_BUFFER;
+                return;
+
+            case DELETE_PREV_CHAR: // backspace
+                success = backspace();
+                break;
+
+            case DELETE_NEXT_CHAR: // delete
+                success = deleteCurrentCharacter();
+                break;
+
+            case MOVE_TO_END:
+                success = moveToEnd();
+                break;
+
+            case PREV_CHAR:
+                success = moveCursor(-1) != 0;
+                break;
+
+            case NEXT_CHAR:
+                success = moveCursor(1) != 0;
+                break;
+
+            case NEXT_HISTORY:
+                success = moveHistory(true);
+                break;
+
+            case PREV_HISTORY:
+                success = moveHistory(false);
+                break;
+
+            case REDISPLAY:
+                break;
+
+            case PASTE:
+                success = paste();
+                break;
+
+            case DELETE_PREV_WORD:
+                success = deletePreviousWord();
+                break;
+
+            case PREV_WORD:
+                success = previousWord();
+                break;
+
+            case NEXT_WORD:
+                success = nextWord();
+                break;
+
+            case START_OF_HISTORY:
+                success = history.moveToFirstEntry();
+                if (success) {
+                    setBuffer(history.current());
+                }
+                break;
+
+            case END_OF_HISTORY:
+                success = history.moveToLastEntry();
+                if (success) {
+                    setBuffer(history.current());
+                }
+                break;
+
+            case CLEAR_LINE:
+                moveInternal(-(buf.buffer.length()));
+                killLine();
+                break;
+
+            case INSERT:
+                buf.setOvertyping(!buf.isOvertyping());
+                break;
+
+            case SEARCH_PREV: // CTRL-R
+                if (searchTerm != null) {
+                    previousSearchTerm = searchTerm.toString();
+                }
+                searchTerm = new StringBuffer();
+                searchIndex = -1;
+                state = SEARCH;
+                printSearchStatus("", "");
+                break;
+
+            case UNKNOWN:
+                if (c != 0) { // ignore null chars
+                    ActionListener action = (ActionListener) triggeredActions.get(new Character((char) c));
+                    if (action != null) {
+                        action.actionPerformed(null);
+                    }
+                } else {
+                    success = false;
+                }
+                break;
+
+            default:
+                putChar(c, true);
+                success = true;
+                break;
+        }
+
+        if (!(success)) {
+            beep();
+        }
+
+        flushConsole();
+    }
+
+    /** Process a key in search mode. */
+    private void processKeySearchMode(int code, int c) throws IOException {
+        switch (code) {
+            case ABORT:
+                state = NORMAL;
+                break;
+                
+            case SEARCH_PREV:
+                // If the search term is empty, go to the previous search term.
+                if (searchTerm.length() == 0) {
+                    System.out.println("Filling in old search term '" + previousSearchTerm + "'");
+                    searchTerm.append(previousSearchTerm);
+                    searchIndex = history.searchBackwards(searchTerm.toString());
+                } else {
+                    if (searchIndex != -1)
+                        searchIndex = history.searchBackwards(searchTerm.toString(), searchIndex);
+                }
+                break;
+            case DELETE_PREV_CHAR:
+                if (searchTerm.length() > 0) {
+                    searchTerm.deleteCharAt(searchTerm.length() - 1);
+                    searchIndex = history.searchBackwards(searchTerm.toString());
+                }
+                break;
+            default:
+                if (code > 0) {
+                    searchTerm.appendCodePoint(c);
+                    searchIndex = history.searchBackwards(searchTerm.toString());
+                    break;
+                } else {
+                    // Set buffer and cursor position to the found string, and go back to normal mode.
+                    if (searchIndex != -1) {
+                        history.setCurrentIndex(searchIndex);
+                        setBuffer(history.current());
+                        buf.cursor = history.current().indexOf(searchTerm.toString());
+                    }
+                    state = NORMAL;
+                    break;
+                }
+        }
+        
+        // if we're still in search mode, print the search status
+        if (state == SEARCH) {
+            if (searchTerm.length() == 0) {
+                printSearchStatus("", "");
+            } else {
+                if (searchIndex == -1) {
+                    beep();
+                } else {
+                    printSearchStatus(searchTerm.toString(), history.getHistory(searchIndex));
+                }
+            }
+        } else {
+            restoreLine();
         }
     }
 
@@ -714,20 +729,14 @@ public class ConsoleReader implements ConsoleOperations {
             buf.append((char) i);
         }
 
-    // return new BufferedReader (new InputStreamReader (in)).readLine ();
+        // return new BufferedReader (new InputStreamReader (in)).readLine ();
     }
 
     /**
      * Reads the console input and returns an array of the form [raw, key
      * binding].
      */
-    private int[] readBinding() throws IOException {
-        int c = readVirtualKey();
-
-        if (c == -1) {
-            return null;
-        }
-
+    private int readBinding(int c) throws IOException {
         // extract the appropriate key binding
         int code = keybindings.resolveKey(c);
 
@@ -735,7 +744,7 @@ public class ConsoleReader implements ConsoleOperations {
             debug("    translated: " + (int) c + ": " + code);
         }
 
-        return new int[]{c, code};
+        return code;
     }
 
     /**

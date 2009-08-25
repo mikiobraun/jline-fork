@@ -44,12 +44,55 @@ public class UnixTerminal extends Terminal {
     String encoding = System.getProperty("input.encoding", "UTF-8");
     ReplayPrefixOneCharInputStream replayStream = new ReplayPrefixOneCharInputStream(encoding);
     InputStreamReader replayReader;
+    private TerminalKeyParser keyParser;
 
     public UnixTerminal() {
         try {
             replayReader = new InputStreamReader(replayStream, encoding);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+
+        keyParser = new TerminalKeyParser();
+        initializeKeyParserBindings();
+    }
+
+    private void initializeKeyParserBindings() {
+        keyParser.defineKey("\u001b[A", VK_UP);
+        keyParser.defineKey("\u001b[1;2A", SHIFT + VK_UP);
+        keyParser.defineKey("\u001b[1;3A", META + VK_UP);
+        keyParser.defineKey("\u001b[1;4A", SHIFT + CTRL + VK_UP);
+        keyParser.defineKey("\u001b[1;5A", CTRL + VK_UP);
+        keyParser.defineKey("\u001b[B", VK_DOWN);
+        keyParser.defineKey("\u001b[1;2B", SHIFT + VK_DOWN);
+        keyParser.defineKey("\u001b[1;3B", META + VK_DOWN);
+        keyParser.defineKey("\u001b[1;4B", SHIFT + CTRL + VK_DOWN);
+        keyParser.defineKey("\u001b[1;5B", CTRL + VK_DOWN);
+        keyParser.defineKey("\u001b[C", VK_RIGHT);
+        keyParser.defineKey("\u001b[1;2C", SHIFT + VK_RIGHT);
+        keyParser.defineKey("\u001b[1;3C", META + VK_RIGHT);
+        keyParser.defineKey("\u001b[1;4C", SHIFT + CTRL + VK_RIGHT);
+        keyParser.defineKey("\u001b[1;5C", CTRL + VK_RIGHT);
+        keyParser.defineKey("\u001b[D", VK_LEFT);
+        keyParser.defineKey("\u001b[1;2D", SHIFT + VK_LEFT);
+        keyParser.defineKey("\u001b[1;3D", META + VK_LEFT);
+        keyParser.defineKey("\u001b[1;4D", SHIFT + CTRL + VK_LEFT);
+        keyParser.defineKey("\u001b[1;5D", CTRL + VK_LEFT);
+        keyParser.defineKey("\u001b[5~", VK_PAGE_UP);
+        keyParser.defineKey("\u001b[6~", VK_PAGE_DOWN);
+        keyParser.defineKey("\u001b[3~", VK_DELETE);
+        keyParser.defineKey("\u001b[2~", VK_INSERT);
+        keyParser.defineKey("\u001bOH", VK_HOME);
+        keyParser.defineKey("\u001bOF", VK_END);
+        keyParser.defineKey("\u007f", VK_BACKSPACE);
+
+        String letters = "abcdefghijklmnopqrstuvwxyz";
+
+        for (int i = 0; i < letters.length(); i++) {
+            char c = letters.charAt(i);
+            keyParser.defineKey("\u001b" + c, META + c);
+            keyParser.defineKey("\u001b" + Character.toUpperCase(c), META + SHIFT + c);
+            keyParser.defineKey("\u001b" + (c - 96), META + c - 96);
         }
     }
 
@@ -120,62 +163,84 @@ public class UnixTerminal extends Terminal {
         resetTerminal();
     }
 
+    private static class EchoingInputStream extends InputStream {
+
+        InputStream in;
+
+        public EchoingInputStream(InputStream in) {
+            this.in = in;
+        }
+
+        public int read() throws IOException {
+            int c = in.read();
+            System.out.println("Read " + c);
+            return c;
+        }
+    }
+
     public int readVirtualKey(InputStream in) throws IOException {
+
+        int c = keyParser.readKey(in);
+        //int c = keyParser.readKey(new EchoingInputStream(in));
+        return c;
+
+        /*
         int c = readCharacter(in);
 
         if (backspaceDeleteSwitched) {
-            if (c == DELETE) {
-                c = '\b';
-            } else if (c == '\b') {
-                c = DELETE;
-            }
+        if (c == DELETE) {
+        c = '\b';
+        } else if (c == '\b') {
+        c = DELETE;
+        }
         }
 
         // in Unix terminals, arrow keys are represented by
         // a sequence of 3 characters. E.g., the up arrow
         // key yields 27, 91, 68
         if (c == ARROW_START) {
-            //also the escape key is 27
-            //thats why we read until we
-            //have something different than 27
-            //this is a bugfix, because otherwise
-            //pressing escape and than an arrow key
-            //was an undefined state
-            while (c == ARROW_START) {
-                c = readCharacter(in);
-            }
-            if (c == ARROW_PREFIX || c == O_PREFIX) {
-                c = readCharacter(in);
-                switch (c) {
-                    case ARROW_UP:
-                        return CTRL_P;
-                    case ARROW_DOWN:
-                        return CTRL_N;
-                    case ARROW_LEFT:
-                        return CTRL_B;
-                    case ARROW_RIGHT:
-                        return CTRL_F;
-                    case HOME_CODE:
-                        return CTRL_A;
-                    case END_CODE:
-                        return CTRL_E;
-                    case DEL_THIRD:
-                        c = readCharacter(in);
-                        return DELETE;
-                }
-            }
+        //also the escape key is 27
+        //thats why we read until we
+        //have something different than 27
+        //this is a bugfix, because otherwise
+        //pressing escape and than an arrow key
+        //was an undefined state
+        while (c == ARROW_START) {
+        c = readCharacter(in);
+        }
+        if (c == ARROW_PREFIX || c == O_PREFIX) {
+        c = readCharacter(in);
+        switch (c) {
+        case ARROW_UP:
+        return CTRL_P;
+        case ARROW_DOWN:
+        return CTRL_N;
+        case ARROW_LEFT:
+        return CTRL_B;
+        case ARROW_RIGHT:
+        return CTRL_F;
+        case HOME_CODE:
+        return CTRL_A;
+        case END_CODE:
+        return CTRL_E;
+        case DEL_THIRD:
+        c = readCharacter(in);
+        return DELETE;
+        }
+        }
         }
         // handle unicode characters, thanks for a patch from amyi@inf.ed.ac.uk
         if (c > 128) {
-            // handle unicode characters longer than 2 bytes,
-            // thanks to Marc.Herbert@continuent.com
-            replayStream.setInput(c, in);
-//            replayReader = new InputStreamReader(replayStream, encoding);
-            c = replayReader.read();
+        // handle unicode characters longer than 2 bytes,
+        // thanks to Marc.Herbert@continuent.com
+        replayStream.setInput(c, in);
+        //            replayReader = new InputStreamReader(replayStream, encoding);
+        c = replayReader.read();
 
         }
 
         return c;
+         */
     }
 
     /**
@@ -426,5 +491,9 @@ public class UnixTerminal extends Terminal {
         public int available() {
             return byteLength - byteRead;
         }
+    }
+
+    public String getKeyForVirtualKey(int virtualKey) {
+        return keyParser.getBinding(virtualKey);
     }
 }

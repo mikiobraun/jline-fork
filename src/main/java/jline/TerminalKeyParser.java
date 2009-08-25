@@ -17,15 +17,15 @@ import java.util.TreeMap;
 public class TerminalKeyParser
         implements ConsoleOperations {
 
-    private InputStream in;
     private final Map keyDefinitions;
+    private final Map keySequences;
     private CharBuffer buffer;
     private boolean replaying;
     private int replayIndex;
 
-    public TerminalKeyParser(InputStream newInputStream) {
-        in = newInputStream;
+    public TerminalKeyParser() {
         keyDefinitions = new TreeMap();
+        keySequences = new TreeMap();
         buffer = new CharBuffer();
         replaying = false;
         replayIndex = 0;
@@ -33,6 +33,7 @@ public class TerminalKeyParser
 
     public void defineKey(String sequence, int code) {
         keyDefinitions.put(sequence, new Integer(code));
+        keySequences.put(new Integer(code), sequence);
     }
 
     /**
@@ -47,7 +48,7 @@ public class TerminalKeyParser
      * @param key
      * @return Either the (virtual keycode), or -1 if more keys are expected.
      */
-    public int readKey() throws IOException {
+    public int readKey(InputStream in) throws IOException {
         if (replaying) {
             int key = buffer.charAt(replayIndex++);
             if (replayIndex >= buffer.length()) {
@@ -55,7 +56,7 @@ public class TerminalKeyParser
             }
             return key;
         } else {
-            int key = readUTF8Key();
+            int key = readUTF8Key(in);
             if (key == -1) {
                 return -1;
             }
@@ -69,25 +70,26 @@ public class TerminalKeyParser
             do {
                 buffer.append((char) key);
 
-                Iterator i = keyDefinitions.keySet().iterator();
+                //System.out.println("Buffer: " + buffer.toString());
+
                 foundPrefix = false;
-                
-                while (i.hasNext()) {
+
+                for (Iterator i = keyDefinitions.keySet().iterator(); i.hasNext();) {
                     String seq = (String) i.next();
                     int cmp = buffer.compare(seq);
-                    switch (cmp) {
-                        case CharBuffer.EQUAL:
-                            int code = ((Integer) keyDefinitions.get(buffer.toString())).intValue();
-                            resetParser();
-                            return code;
-                        case CharBuffer.PREFIX:
-                            key = readUTF8Key();
-                            if (key == -1)
-                                break;
-                            else {
-                                foundPrefix = true;
-                                break;
-                            }
+                    if (cmp == CharBuffer.EQUAL) {
+                        int code = ((Integer) keyDefinitions.get(buffer.toString())).intValue();
+                        resetParser();
+                        return code;
+                    } else if (cmp == CharBuffer.PREFIX) {
+                        key = readUTF8Key(in);
+                        if (key == -1) {
+                            break;
+                        } else {
+                            //System.out.println("Found prefix for " + seq);
+                            foundPrefix = true;
+                            break; // out of for loop
+                        }
                     }
                 }
             } while (foundPrefix);
@@ -100,7 +102,7 @@ public class TerminalKeyParser
             // Apparently, we found no match, so we have to start replaying... .
             replayIndex = 0;
             replaying = true;
-            return readKey();
+            return readKey(in);
         }
     }
 
@@ -112,7 +114,7 @@ public class TerminalKeyParser
         buffer.clear();
     }
 
-    public int readUTF8Key() throws IOException {
+    public int readUTF8Key(InputStream in) throws IOException {
         int key = in.read();
         if (key == -1) {
             return key;
@@ -132,6 +134,21 @@ public class TerminalKeyParser
             return ((key & 0x07) << 18) | ((key2 & 0x3f) << 12) | ((key3 & 0x3f) << 6) | (key4 & 0x3f);
         } else {
             return key;
+        }
+    }
+
+    public String getBinding(int virtualKey) {
+        if (virtualKey == -1)
+            return null;
+        else {
+            Integer i = new Integer(virtualKey);
+
+            String keys = (String) keySequences.get(i);
+
+            if (keys != null)
+                return keys;
+            else
+                return String.valueOf((char) virtualKey);
         }
     }
 }

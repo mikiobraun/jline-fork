@@ -36,7 +36,6 @@ public class TestEditLine extends JLineTestCase {
                 .op(ConsoleReader.PREV_WORD)
                 .append('X'));
 
-
         assertBuffer("This is a XtestX",
                      new Buffer("This is a test").op(ConsoleReader.PREV_WORD)
                                                  .append('X')

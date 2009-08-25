@@ -7,17 +7,17 @@ package jline;
 /**
  *
  */
-public class CharBuffer {
+class CharBuffer {
 
     private char[] buffer;
     private int pos;
 
-    public CharBuffer() {
+    CharBuffer() {
         buffer = new char[10];
         pos = 0;
     }
 
-    public void append(char k) {
+    void append(char k) {
         if (pos == buffer.length) {
             resize(buffer.length + 1);
         }
@@ -34,7 +34,7 @@ public class CharBuffer {
         return result.toString();
     }
 
-    public void resize(int newLength) {
+    void resize(int newLength) {
         char[] newBuffer = new char[newLength];
 
         for (int i = 0; i < pos; i++) {
@@ -44,25 +44,25 @@ public class CharBuffer {
         buffer = newBuffer;
     }
 
-    public void clear() {
+    void clear() {
         pos = 0;
     }
 
-    public int length() {
+    int length() {
         return pos;
     }
 
-    public char charAt(int index) {
+    char charAt(int index) {
         return buffer[index];
     }
 
-    public char[] getCharArray() {
+    char[] getCharArray() {
         return buffer;
     }
 
-    public static final int NOT_EQUAL = 0;
-    public static final int PREFIX = 1;
-    public static final int EQUAL = 2;
+    static final int NOT_EQUAL = 0;
+    static final int PREFIX = 1;
+    static final int EQUAL = 2;
 
     /**
      * Compares the CharBuffer to a string.
@@ -71,7 +71,7 @@ public class CharBuffer {
      * @return NOT_EQUAL, if the strings are different, EQUAL, if they are equal,
      *    and PREFIX if the char buffer is a prefix of the string.
      */
-    public int compare(String seq) {
+    int compare(String seq) {
         if (pos > seq.length()) {
             return NOT_EQUAL;
         } else if (pos == seq.length()) {

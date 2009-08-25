@@ -14,11 +14,13 @@ public class Keybindings implements ConsoleOperations {
     private Map actions;
     private Map keys;
 
+    /** Construct a new Keybindings object to store and translate keybindings. */
     public Keybindings() {
         actions = new TreeMap();
         keys = new TreeMap();
     }
 
+    /** Add a new key binding. */
     public void bindKey(int virtualKeyCode, int action) {
         Integer key = new Integer(virtualKeyCode);
         Integer act = new Integer(action);
@@ -26,15 +28,26 @@ public class Keybindings implements ConsoleOperations {
         keys.put(act, key);
     }
 
+    /**
+     * Resolve a key to its action.
+     *
+     * Unrecodgnized control keys are mapped to UNKNOWN, printable characters
+     * are passed back as given.
+     */
     public int resolveKey(int virtualKeyCode) {
         Integer key = new Integer(virtualKeyCode);
         if (actions.containsKey(key)) {
             return ((Integer) actions.get(key)).intValue();
-        } else {
+        } else if (virtualKeyCode >= SPECIAL || Character.isISOControl(virtualKeyCode)) {
             return UNKNOWN;
+        } else {
+            return virtualKeyCode;
         }
     }
 
+    /**
+     * Reverse look up the key for a given action.
+     */
     public int getKeyForAction(int action) {
         Integer act = new Integer(action);
         if (keys.containsKey(act)) {
@@ -89,6 +102,18 @@ public class Keybindings implements ConsoleOperations {
             return VK_UP;
         } else if (key.equals("down")) {
             return VK_DOWN;
+        } else if (key.equals("delete")) {
+            return VK_DELETE;
+        } else if (key.equals("page-up")) {
+            return VK_PAGE_UP;
+        } else if (key.equals("page-down")) {
+            return VK_PAGE_DOWN;
+        } else if (key.equals("home")) {
+            return VK_HOME;
+        } else if (key.equals("end")) {
+            return VK_END;
+        } else if (key.equals("backspace")) {
+            return VK_BACKSPACE;
         } else {
             return -1;
         }

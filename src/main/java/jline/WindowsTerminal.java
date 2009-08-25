@@ -509,5 +509,8 @@ public class WindowsTerminal extends Terminal {
             return byteLength - byteRead;
         }
     }
-    
+
+    public String getKeyForVirtualKey(int virtualKey) {
+         return virtualKey != -1 ? String.valueOf(virtualKey) : null;
+    }
 }

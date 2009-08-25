@@ -34,6 +34,7 @@ public interface ConsoleOperations {
     final static char DELETE = 127;
     final static char CTRL_QM = 127;
 
+
     final static int SPECIAL = 0x10000;
     final static int SHIFT   = 0x20000;
     final static int CTRL    = 0x40000;
@@ -47,6 +48,11 @@ public interface ConsoleOperations {
     final static int VK_DELETE = SPECIAL + 6;
     final static int VK_PAGE_UP = SPECIAL + 7;
     final static int VK_PAGE_DOWN = SPECIAL + 8;
+    final static int VK_INSERT = SPECIAL + 9;
+    final static int VK_END = SPECIAL + 10;
+    final static int VK_BACKSPACE = SPECIAL + 11;
+
+    // Function keys... .
     final static int VK_F1 = SPECIAL + 101;
     final static int VK_F2 = SPECIAL + 102;
     final static int VK_F3 = SPECIAL + 103;
@@ -59,7 +65,6 @@ public interface ConsoleOperations {
     final static int VK_F10 = SPECIAL + 110;
     final static int VK_F11 = SPECIAL + 111;
     final static int VK_F12 = SPECIAL + 112;
-
     /**
      *        Logical constants for key operations.
      */
@@ -303,5 +308,4 @@ public interface ConsoleOperations {
      * Operation that aborts the current command (like searching)
      */
     final static short ABORT = -64;
-
 }
