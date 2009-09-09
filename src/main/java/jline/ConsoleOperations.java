@@ -308,4 +308,8 @@ public interface ConsoleOperations {
      * Operation that aborts the current command (like searching)
      */
     final static short ABORT = -64;
+
+    /** Transpose characters. */
+    final static short TRANSPOSE = -65;
+
 }

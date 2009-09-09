@@ -37,7 +37,7 @@ import jline.UnixTerminal.ReplayPrefixOneCharInputStream;
  *
  * @author <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  */
-public class WindowsTerminal extends Terminal {
+public class WindowsTerminal extends ANSITerminal {
     // constants copied from wincon.h
 
     /**

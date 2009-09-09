@@ -22,7 +22,7 @@ import java.util.*;
  *  @author  <a href="mailto:mwp1@cornell.edu">Marc Prud'hommeaux</a>
  *  @author  Updates <a href="mailto:dwkemp@gmail.com">Dale Kemp</a> 2005-12-03
  */
-public class UnixTerminal extends Terminal {
+public class UnixTerminal extends ANSITerminal {
 
     public static final short ARROW_START = 27;  // Escape
     public static final short ARROW_PREFIX = 91; // '['
