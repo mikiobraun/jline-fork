@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ -z $JRUBY_HOME ]; then
     JRUBY_HOME=$(dirname $(dirname $(which jruby)))
 fi
